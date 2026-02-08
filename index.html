@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Quiet Question</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fdecef;
+            /* Uniform Soft Pink */
+            --text-color: #4a4a4a;
+            --accent-white: #ffffff;
+            --accent-soft-white: rgba(255, 255, 255, 0.2);
+            --transition-slow: 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            line-height: 1.6;
+        }
+
+        h1,
+        h2,
+        .elegant-font {
+            font-family: 'Playfair Display', serif;
+            font-weight: 400;
+        }
+
+        /* --- Background Animation (White Hearts) --- */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 1;
+            /* Opacity handled per-heart in JS */
+            pointer-events: none;
+        }
+
+        /* --- Layout --- */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            background-color: transparent;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        /* --- Hero Section --- */
+        .hero-text {
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+            animation: heroFadeIn 3s ease forwards;
+            animation-delay: 0.5s;
+            font-style: italic;
+        }
+
+        @keyframes heroFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* --- Scroll Story --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+            margin-bottom: 1.5rem;
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Moments Section --- */
+        .moments-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 5vh 0;
+        }
+
+        /* --- Pause Section --- */
+        .pause-section {
+            min-height: 60vh;
+        }
+
+        .line {
+            width: 60px;
+            height: 1px;
+            background-color: var(--accent-white);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .small-text {
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+        }
+
+        /* --- The Question --- */
+        .question-text {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            margin-bottom: 2.5rem;
+            animation: softPulse 5s infinite ease-in-out;
+        }
+
+        .underline-container {
+            display: inline-block;
+            position: relative;
+        }
+
+        .underline {
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background-color: var(--accent-white);
+            transition: width 2.5s ease-out;
+        }
+
+        .underline.active {
+            width: 100%;
+        }
+
+        @keyframes softPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.01);
+            }
+        }
+
+        /* --- Button --- */
+        .btn-yes {
+            padding: 1rem 3.5rem;
+            font-size: 1.1rem;
+            border: 1px solid var(--accent-white);
+            background: transparent;
+            color: var(--text-color);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            position: relative;
+        }
+
+        .btn-yes:hover {
+            background-color: var(--accent-soft-white);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* --- Secret Message --- */
+        #success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 3s ease;
+            padding: 2rem;
+        }
+
+        main {
+            transition: opacity 2s ease;
+        }
+
+        main.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #success-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .secret-line {
+            font-size: clamp(1.1rem, 4vw, 1.6rem);
+            font-style: italic;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 2.5s ease, transform 2.5s ease;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .secret-line.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .final-line {
+            font-size: clamp(1.6rem, 6vw, 2.5rem);
+            margin-top: 2rem;
+            font-weight: 400;
+            opacity: 0;
+            transition: opacity 3s ease;
+        }
+
+        .final-line.visible {
+            opacity: 1;
+        }
+
+        .btn-more {
+            margin-top: 2rem;
+            padding: 0.8rem 2.5rem;
+            font-size: 1rem;
+            border: 1px solid var(--accent-white);
+            background: transparent;
+            color: var(--text-color);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            font-family: 'Inter', sans-serif;
+            opacity: 0;
+            transform: translateY(10px);
+            display: none;
+            outline: none;
+        }
+
+        .btn-more.visible {
+            display: inline-block;
+            animation: fadeIn 1.5s ease forwards;
+        }
+
+        .btn-more:hover {
+            background-color: var(--accent-soft-white);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .intention-reveal {
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            margin-top: 2.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 3s ease, transform 3s ease;
+            text-align: center;
+        }
+
+        .intention-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 0.9;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Audio Controls --- */
+        .audio-controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 50;
+        }
+
+        #audio-toggle {
+            background: none;
+            border: none;
+            color: var(--accent-white);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.4;
+            transition: opacity 0.3s;
+        }
+
+        #audio-toggle:hover {
+            opacity: 0.8;
+        }
+
+        /* --- Mobile Adjustments --- */
+        @media (max-width: 600px) {
+            .reveal {
+                margin-bottom: 3rem;
+            }
+
+            .moments-group {
+                gap: 10vh;
+            }
+
+            .btn-yes {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .secret-line {
+                text-align: center;
+            }
+        }
+
+        /* --- Emoji Heart Animation --- */
+        .emoji-heart {
+            position: fixed;
+            bottom: -50px;
+            pointer-events: none;
+            z-index: 101;
+            animation: floatUpEmoji 5s linear forwards;
+            user-select: none;
+        }
+
+        @keyframes floatUpEmoji {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.8;
+            }
+
+            90% {
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: translateY(-110vh) translateX(var(--drift)) rotate(20deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <p class="hero-text elegant-font">“I’ve been meaning to ask you something…”</p>
+            </div>
+        </section>
+
+        <!-- Scroll Story -->
+        <section class="story">
+            <div class="container">
+                <p class="reveal">“I don’t like loud moments.”</p>
+                <p class="reveal">“I prefer the quiet ones.”</p>
+                <p class="reveal">“The ones that feel honest.”</p>
+            </div>
+        </section>
+
+        <!-- Moments Section -->
+        <section class="moments">
+            <div class="container">
+                <div class="moments-group">
+                    <p class="reveal">“Some smiles feel familiar.”</p>
+                    <p class="reveal">“Some conversations feel easy.”</p>
+                    <p class="reveal">“And some people…”</p>
+                    <p class="reveal">“Feel like home.”</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pause Section -->
+        <section class="pause-section">
+            <div class="line"></div>
+            <p class="small-text">“This part took me the longest.”</p>
+        </section>
+
+        <!-- The Question Section -->
+        <section class="question-section" id="proposal">
+            <div class="container">
+                <div class="underline-container">
+                    <h1 class="question-text">Will you be mine?</h1>
+                    <div class="underline" id="reveal-underline"></div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button class="btn-yes" id="yes-btn">Yes</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="success-overlay">
+        <div class="secret-message-container">
+            <p class="secret-line">“There’s one more thing…”</p>
+            <p class="secret-line">“This wasn’t just a question.”</p>
+            <p class="secret-line">“It truly means a lot to me.”</p>
+            <p class="secret-line">“So… I really like you.🤍”</p>
+            <button class="btn-more" id="more-btn">There's more</button>
+            <p class="intention-reveal" id="intention-text">“I like you — not casually, but with intention.”</p>
+        </div>
+    </div>
+
+    <div class="audio-controls">
+        <button id="audio-toggle" title="Play music">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+            </svg>
+        </button>
+    </div>
+
+    <audio id="romantic-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // --- White Heart Animation ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let hearts = [];
+        let heartCount = window.innerWidth < 600 ? 15 : 30;
+        let isPeacefulMode = false;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Heart {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + Math.random() * 100;
+                this.size = Math.random() * 8 + 4;
+                this.speed = isPeacefulMode ? (Math.random() * 0.12 + 0.05) : (Math.random() * 0.4 + 0.15);
+                this.opacity = (Math.random() * 0.12 + 0.08); // Increased to 8-20% for visibility
+                if (isPeacefulMode) this.opacity *= 0.6;
+                this.drift = Math.random() * 0.4 - 0.2;
+            }
+
+            update() {
+                this.y -= this.speed;
+                this.x += this.drift;
+                if (this.y < -20) {
+                    if (isPeacefulMode && hearts.length > heartCount) {
+                        return false; // Signal for removal
+                    }
+                    this.reset();
+                }
+                return true;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(-this.size / 2, -this.size / 2, -this.size, this.size / 4, 0, this.size);
+                ctx.bezierCurveTo(this.size, this.size / 4, this.size / 2, -this.size / 2, 0, 0);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function initHearts() {
+            hearts = [];
+            for (let i = 0; i < heartCount; i++) {
+                hearts.push(new Heart());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hearts = hearts.filter(heart => {
+                const isAlive = heart.update();
+                if (isAlive) heart.draw();
+                return isAlive;
+            });
+            requestAnimationFrame(animate);
+        }
+
+        initHearts();
+        animate();
+
+        // --- Scroll Intersection Observer ---
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Underline animation observer
+        const proposalObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                setTimeout(() => {
+                    const underline = document.getElementById('reveal-underline');
+                    if (underline) underline.classList.add('active');
+                }, 800);
+            }
+        }, { threshold: 0.5 });
+
+        const proposalSection = document.getElementById('proposal');
+        if (proposalSection) proposalObserver.observe(proposalSection);
+
+        // --- Interaction ---
+        const yesBtn = document.getElementById('yes-btn');
+        const successOverlay = document.getElementById('success-overlay');
+        const secretLines = document.querySelectorAll('.secret-line');
+        const moreBtn = document.getElementById('more-btn');
+        const intentionText = document.getElementById('intention-text');
+
+        if (yesBtn && successOverlay) {
+            yesBtn.addEventListener('click', () => {
+                // Fade out main content
+                if (document.querySelector('main')) {
+                    document.querySelector('main').classList.add('fade-out');
+                }
+
+                // Heart Burst Celebration
+                const burstCount = window.innerWidth < 600 ? 30 : 60;
+                for (let i = 0; i < burstCount; i++) {
+                    hearts.push(new Heart());
+                }
+
+                // Transition to Peaceful Mode after the burst has started
+                setTimeout(() => {
+                    isPeacefulMode = true;
+                    heartCount = window.innerWidth < 600 ? 10 : 20;
+                }, 100);
+
+                successOverlay.style.display = 'flex';
+                setTimeout(() => {
+                    successOverlay.classList.add('active');
+                    revealSecretMessages();
+                }, 100);
+            });
+        }
+
+        if (moreBtn) {
+            moreBtn.addEventListener('click', () => {
+                moreBtn.style.display = 'none';
+                if (intentionText) intentionText.classList.add('visible');
+            });
+        }
+
+        async function revealSecretMessages() {
+            const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            // Start emoji heart animation
+            const emojiInterval = setInterval(spawnEmojiHeart, 400);
+
+            await delay(1800);
+
+            for (let i = 0; i < secretLines.length; i++) {
+                secretLines[i].classList.add('visible');
+                await delay(2800);
+            }
+
+            await delay(800);
+            if (moreBtn) moreBtn.classList.add('visible');
+        }
+
+        function spawnEmojiHeart() {
+            const heartEmojis = ['💕', '💖', '💗', '💝', '💓', '❤️'];
+            const heart = document.createElement('div');
+            heart.className = 'emoji-heart';
+            heart.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+
+            // Random horizontal movement
+            const drift = (Math.random() * 40 - 20) + 'px';
+            heart.style.setProperty('--drift', drift);
+
+            document.body.appendChild(heart);
+
+            setTimeout(() => {
+                heart.remove();
+            }, 5000);
+        }
+
+        // --- Audio toggle ---
+        const audio = document.getElementById('romantic-music');
+        const audioToggle = document.getElementById('audio-toggle');
+        let isPlaying = false;
+
+        audioToggle.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                audioToggle.style.opacity = '0.4';
+            } else {
+                audio.play().catch(e => console.log("User interaction required"));
+                audioToggle.style.opacity = '0.8';
+            }
+            isPlaying = !isPlaying;
+        });
+    </script>
+</body>
+
+</html>
